@@ -9,6 +9,10 @@ import com.HCI.remote.SimpleGestureFilter.SimpleGestureListener;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
@@ -17,12 +21,15 @@ import android.view.MotionEvent;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class Remote extends Activity implements SimpleGestureListener {
+public class Remote extends Activity implements SimpleGestureListener, SensorEventListener {
 	
 	private SimpleGestureFilter detector;
 	private Socket client;
 	private PrintWriter printwriter;
 	private String msg;
+	
+	private SensorManager sm;
+	private Sensor proxSensor;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +37,10 @@ public class Remote extends Activity implements SimpleGestureListener {
 		setContentView(R.layout.activity_remote);
 		
 		detector = new SimpleGestureFilter(this,this);
+		
+		sm = (SensorManager)getSystemService(SENSOR_SERVICE);
+		proxSensor = sm.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+		sm.registerListener(this, proxSensor, SensorManager.SENSOR_DELAY_NORMAL);
 	}
 	
 	@Override
@@ -43,13 +54,13 @@ public class Remote extends Activity implements SimpleGestureListener {
 	public void onSwipe(int direction) {
 		// TODO Auto-generated method stub
 		switch (direction) {
-	      case SimpleGestureFilter.SWIPE_RIGHT : msg = "Swipe Right";
-	                                               break;
-	      case SimpleGestureFilter.SWIPE_LEFT : msg = "Swipe Left";
+	      case SimpleGestureFilter.SWIPE_RIGHT : msg = "chNext";
+	                                               		break;
+	      case SimpleGestureFilter.SWIPE_LEFT : msg = "chPrev";
 	                                                     break;
-	      case SimpleGestureFilter.SWIPE_DOWN : msg = "Swipe Down";
+	      case SimpleGestureFilter.SWIPE_DOWN : msg = "volDown";
 	                                                     break;
-	      case SimpleGestureFilter.SWIPE_UP : msg = "Swipe Up";
+	      case SimpleGestureFilter.SWIPE_UP : msg = "volUp";
 	                                                     break;
 	      }
 		
@@ -64,7 +75,7 @@ public class Remote extends Activity implements SimpleGestureListener {
 	public void onDoubleTap() {
 		// TODO Auto-generated method stub
 		msg = "DoubleTap";
-		
+		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
 		SendMessage sendMessageTask = new SendMessage(msg);
 		sendMessageTask.execute();
 		
@@ -74,6 +85,7 @@ public class Remote extends Activity implements SimpleGestureListener {
 	public void onLongPress() {
 		// TODO Auto-generated method stub
 		msg = "LongPress";
+		Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
 		SendMessage sendMessageTask = new SendMessage(msg);
 		sendMessageTask.execute();
 	}
@@ -106,5 +118,27 @@ public class Remote extends Activity implements SimpleGestureListener {
 			}
 			return null;
 		}
+	}
+	
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
+		
+	}
+
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+		// TODO Auto-generated method stub
+		if(event.values[0]==0){
+			msg = "Mute";
+			Toast.makeText(getApplicationContext(), "Mute", Toast.LENGTH_SHORT).show();
+			SendMessage sendMessageTask = new SendMessage(msg);
+			sendMessageTask.execute();
+		}
+		else{ 
+			msg= "unMute";
+			Toast.makeText(getApplicationContext(), "UnMute", Toast.LENGTH_SHORT).show();
+			SendMessage sendMessageTask = new SendMessage(msg);
+			sendMessageTask.execute();
+		}		
 	}
 }
